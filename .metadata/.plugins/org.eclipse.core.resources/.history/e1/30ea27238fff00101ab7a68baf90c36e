@@ -1,0 +1,111 @@
+package com.bookStore.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.bookStore.entity.Book;
+import com.bookStore.entity.MyBookList;
+import com.bookStore.service.BookService;
+import com.bookStore.service.MyBookListService;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+@Controller
+public class BookController {
+
+    @Autowired
+    private BookService service;
+
+    @Autowired
+    private MyBookListService myBookService;
+
+    // ✅ HOME PAGE – show REAL available books
+    @GetMapping("/")
+    public String home(Model model) {
+        List<Book> list = service.getAllBook();
+        model.addAttribute("book", list);
+        return "home";
+    }
+
+    @GetMapping("/book_register")
+    public String bookRegister() {
+        return "bookRegister";
+    }
+
+    @GetMapping("/available_books")
+    public ModelAndView getAllBook() {
+        List<Book> list = service.getAllBook();
+        return new ModelAndView("bookList", "book", list);
+    }
+
+    // ✅ SAVE BOOK WITH IMAGE
+    @PostMapping("/save")
+    public String saveBook(
+            @ModelAttribute Book book,
+            @RequestParam("imageFile") MultipartFile file) throws IOException {
+
+        if (!file.isEmpty()) {
+            String uploadDir = "src/main/resources/static/images/";
+            File uploadFolder = new File(uploadDir);
+
+            if (!uploadFolder.exists()) {
+                uploadFolder.mkdirs();
+            }
+
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            Path filePath = Paths.get(uploadDir + fileName);
+            Files.write(filePath, file.getBytes());
+
+            book.setImageName(fileName);
+        }
+
+        service.save(book);
+        return "redirect:/available_books";
+    }
+
+    @GetMapping("/my_books")
+    public String getMyBooks(Model model) {
+        List<MyBookList> list = myBookService.getAllMyBooks();
+        model.addAttribute("books", list);
+        return "myBooks";
+    }
+
+    @GetMapping("/mylist/{id}")
+    public String getMyList(@PathVariable("id") int id) {
+        Book b = service.getBookById(id);
+
+        MyBookList mb = new MyBookList(
+             
+                b.getName(),
+                b.getAuthor(),
+                b.getPrice(),
+                b.getImageName()   // ← add this!
+        );
+
+        myBookService.saveMyBooks(mb);
+        return "redirect:/my_books";
+    }
+
+
+    @GetMapping("/editBook/{id}")
+    public String editBook(@PathVariable("id") int id, Model model) {
+        Book b = service.getBookById(id);
+        model.addAttribute("book", b);
+        return "bookEdit";
+    }
+
+    @GetMapping("/deleteBook/{id}")
+    public String deleteBook(@PathVariable("id") int id) {
+        service.deleteById(id);
+        return "redirect:/available_books";
+    }
+}
