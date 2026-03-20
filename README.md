@@ -20,9 +20,3 @@ Java, Spring Boot, Spring Data JPA, Hibernate, MySQL, Thymeleaf, HTML, CSS, Mave
 - **Repository:** Database operations  
 - **Entity:** Book and MyBookList models  
 - **View:** Thymeleaf templates  
-
-## Getting Started
-
-1. Clone the repository:  
-```bash
-git clone https://github.com/yourusername/BookStoreApp.git
